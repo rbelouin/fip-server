@@ -1,6 +1,11 @@
 package models
 
+import play.api._
 import play.api.libs.json._
+import play.api.libs.ws._
+
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class SongInput(
   id: String,
@@ -17,6 +22,8 @@ case class Song(
 )
 
 object Song {
+  import Play.current
+
   implicit val sif = Json.format[SongInput]
   implicit val sf = Json.format[Song]
 
@@ -28,5 +35,9 @@ object Song {
     val jsvalue = Json.parse(json)
     
     (jsvalue \ "current" \ "song").asOpt[SongInput].map(fromInput _)
+  }
+
+  def fetchCurrentSong: Future[Option[Song]] = {
+    WS.url("http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json").get().map(_.body).map(parse _)
   }
 }
