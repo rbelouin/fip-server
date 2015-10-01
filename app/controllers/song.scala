@@ -18,4 +18,13 @@ class SongController extends Controller {
       })
     })
   }
+
+  def getSongs = Action { req =>
+    if(req.accepts("audio/mpeg")) {
+      SeeOther("http://audio.scdn.arkena.com/11016/fip-midfi128.mp3")
+    }
+    else {
+      NotAcceptable
+    }
+  }
 }

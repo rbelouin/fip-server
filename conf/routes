@@ -6,6 +6,7 @@
 GET     /                           controllers.Application.index
 
 # API
+GET     /api/songs                  controllers.SongController.getSongs
 GET     /api/songs/current          controllers.SongController.getCurrentSong
 
 # Map static resources from the /public folder to the /assets URL path
