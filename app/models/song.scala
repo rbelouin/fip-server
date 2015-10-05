@@ -9,16 +9,28 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class SongInput(
   id: String,
+  startTime: Long,
+  endTime: Long,
   titre: String,
+  titreAlbum: String,
   interpreteMorceau: String,
-  startTime: Long
+  anneeEditionMusique: String,
+  label: String,
+  visuel: Map[String, String],
+  lien: String
 )
   
 case class Song(
   id: String,
+  startTime: Long,
+  endTime: Long,
   title: String,
-  author: String,
-  startTime: Long
+  album: String,
+  artist: String,
+  year: String,
+  label: String,
+  icons: Map[String, String],
+  itunes: String
 )
 
 object Song {
@@ -28,7 +40,18 @@ object Song {
   implicit val sf = Json.format[Song]
 
   def fromInput(input: SongInput): Song = {
-    Song(input.id, input.titre, input.interpreteMorceau, input.startTime)
+    Song(
+      input.id,
+      input.startTime,
+      input.endTime,
+      input.titre,
+      input.titreAlbum,
+      input.interpreteMorceau,
+      input.anneeEditionMusique,
+      input.label,
+      input.visuel,
+      input.lien
+    )
   }
 
   def parse(json: String): Option[Song] = {

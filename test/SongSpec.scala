@@ -13,15 +13,46 @@ class SongSpec extends Specification { def is = s2"""
     parse FIP json correctly                          $parse
                                                       """
   def fromInput = {
-    Song.fromInput(SongInput("az", "er", "ty", 42)) === Song("az", "er", "ty", 42)
+    Song.fromInput(SongInput(
+      "id",
+      42,
+      92,
+      "title",
+      "album",
+      "artist",
+      "year",
+      "label",
+      Map("small" -> "small", "medium" -> "medium"),
+      "itunes"
+    )) === Song(
+      "id",
+      42,
+      92,
+      "title",
+      "album",
+      "artist",
+      "year",
+      "label",
+      Map("small" -> "small", "medium" -> "medium"),
+      "itunes"
+    )
   }
 
   def parse = {
     Song.parse(Data.FIP_player_current) === Some(Song(
       "6bf6b0d5f569da2d460de4e49cc311e0",
+      1443718524,
+      1443718769,
       "JE PARLE EN FOU",
+      "CAP WALLER",
       "BERTRAND BELIN",
-      1443718524
+      "2015",
+      "CINQ 7",
+      Map(
+        "small" -> "http://is2.mzstatic.com/image/thumb/Music6/v4/c9/f5/e8/c9f5e84d-2e67-af7d-fad6-784547927acc/3596973270726_cover.jpg/100x100bb-85.jpg",
+        "medium" -> "http://is2.mzstatic.com/image/thumb/Music6/v4/c9/f5/e8/c9f5e84d-2e67-af7d-fad6-784547927acc/3596973270726_cover.jpg/400x400bb-85.jpg"
+      ),
+      "https://itunes.apple.com/fr/album/je-parle-en-fou/id1038007979?i=1038008110&uo=4"
     ))
   }
 }
