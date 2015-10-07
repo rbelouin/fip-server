@@ -15,7 +15,7 @@ case class SongInput(
   titreAlbum: String,
   interpreteMorceau: String,
   anneeEditionMusique: String,
-  label: String,
+  label: Option[String],
   visuel: Map[String, String],
   lien: String
 )
@@ -28,7 +28,7 @@ case class Song(
   album: String,
   artist: String,
   year: String,
-  label: String,
+  label: Option[String],
   icons: Map[String, String],
   itunes: String
 )
