@@ -6,6 +6,8 @@
 GET     /                           controllers.Application.index
 
 # API
+GET     /api/login                  controllers.SpotifyController.login
+GET     /api/callback               controllers.SpotifyController.callback
 GET     /api/songs                  controllers.SongController.getSongs
 GET     /api/songs/current          controllers.SongController.getCurrentSong
 
