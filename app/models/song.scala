@@ -3,6 +3,7 @@ package models
 import play.api._
 import play.api.libs.json._
 import play.api.libs.ws._
+import play.api.data.validation._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -13,6 +14,9 @@ import akka.util.Timeout
 import akka.stream.ActorMaterializer
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl._
+
+case class FipResponse(current: FipResponseCurrent)
+case class FipResponseCurrent(song: SongInput)
 
 case class SongInput(
   id: String,
@@ -40,11 +44,26 @@ case class Song(
   itunes: String
 )
 
+class JsErrorWrites extends Writes[Seq[(JsPath, Seq[ValidationError])]] {
+  override def writes(errors: Seq[(JsPath, Seq[ValidationError])]): JsValue = {
+   JsArray(errors.map {
+      case (path, errors) => {
+        JsObject(Seq(
+          "path" -> JsString(path.toJsonString),
+          "errors" -> JsArray(errors.map(err => JsString(err.message)))
+        ))
+      }
+    })
+  }
+}
+
 object Song {
   import Play.current
 
   implicit val sif = Json.format[SongInput]
   implicit val sf = Json.format[Song]
+  implicit val frcf = Json.format[FipResponseCurrent]
+  implicit val frf = Json.format[FipResponse]
 
   def fromInput(input: SongInput): Song = {
     Song(
@@ -61,10 +80,10 @@ object Song {
     )
   }
 
-  def parse(json: String): Option[Song] = {
-    val jsvalue = Json.parse(json)
-    
-    (jsvalue \ "current" \ "song").asOpt[SongInput].map(fromInput _)
+  def parse(json: String): JsResult[Song] = {
+    val result = Json.parse(json).validate[FipResponse]
+
+    result.map(_.current.song).map(fromInput _)
   }
 }
 
@@ -84,8 +103,8 @@ object SongFetcher {
 
   val fetcher = system.actorOf(props(url))
 
-  def fetchCurrent: Future[Option[Song]] = {
-    (fetcher ? CurrentSongRequest).mapTo[Option[Song]]
+  def fetchCurrent: Future[JsResult[Song]] = {
+    (fetcher ? CurrentSongRequest).mapTo[JsResult[Song]]
   }
 }
 
@@ -93,7 +112,7 @@ class SongFetcher(url: String, app: Application) extends ActorPublisher[Option[S
   import SongFetcher._
   import context.dispatcher
 
-  var song: Option[Song] = None
+  var song: JsResult[Song] = JsError()
 
   override def preStart = {
     context.system.scheduler.schedule(0.seconds, 2.seconds, self, SongFetchRequest)
@@ -110,7 +129,7 @@ class SongFetcher(url: String, app: Application) extends ActorPublisher[Option[S
     }
   }
 
-  def fetchCurrentSong: Future[Option[Song]] = {
+  def fetchCurrentSong: Future[JsResult[Song]] = {
     implicit val application = app
 
     WS.url(url).get().map(_.body).map(Song.parse _)

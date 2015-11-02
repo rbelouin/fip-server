@@ -1,5 +1,5 @@
 object Data {
-  val FIP_player_current = """{
+  val current = """{
     "current": {
       "emission": {
         "startTime": 1443722400,
@@ -29,7 +29,7 @@ object Data {
     }
   }"""
 
-  val FIP_player_current_no_label = """{
+  val current_no_label = """{
     "current": {
       "emission": {
         "startTime": 1443722400,
@@ -54,6 +54,21 @@ object Data {
           "medium": "http://is2.mzstatic.com/image/thumb/Music6/v4/c9/f5/e8/c9f5e84d-2e67-af7d-fad6-784547927acc/3596973270726_cover.jpg/400x400bb-85.jpg"
         },
         "lien": "https://itunes.apple.com/fr/album/je-parle-en-fou/id1038007979?i=1038008110&uo=4"
+      }
+    }
+  }"""
+
+  val current_no_song = """{
+    "current": {
+      "emission": {
+        "startTime": 1443722400,
+        "endTime": 1443729600,
+        "id": "78c1ee010b2660fa4e245f63c2b86498",
+        "titre": "Live à Fip",
+        "visuel": {
+          "small": "http://www.fipradio.fr/sites/all/modules/fip/fip_direct/images/direct_default_cover.png"
+        },
+        "lien": "http://www.fipradio.fr/"
       }
     }
   }"""

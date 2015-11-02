@@ -10,9 +10,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 
 class SongController extends Controller {
+  implicit val ew = new JsErrorWrites
+
   def getCurrentSong = Action.async {
     SongFetcher.fetchCurrent.map(m_song => {
-      m_song.fold[Result](InternalServerError)(song => {
+      m_song.fold[Result](err => {
+        InternalServerError(Json.toJson(err))
+      }, song => {
         Ok(Json.toJson(song))
       })
     })

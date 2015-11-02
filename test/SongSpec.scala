@@ -1,4 +1,7 @@
 import org.specs2._
+import org.specs2.matcher._
+
+import play.api.libs.json._
 
 import models._
 
@@ -12,6 +15,7 @@ class SongSpec extends Specification { def is = s2"""
   The Song.parse method should
     parse FIP json correctly                          $parse
     parse FIP json correctly (no label)               $parseNoLabel
+    return an error when the song field is missing    $parseNoSong
                                                       """
   def fromInput = {
     Song.fromInput(SongInput(
@@ -40,7 +44,7 @@ class SongSpec extends Specification { def is = s2"""
   }
 
   def parse = {
-    Song.parse(Data.FIP_player_current) === Some(Song(
+    Song.parse(Data.current).asOpt === Some(Song(
       "6bf6b0d5f569da2d460de4e49cc311e0",
       1443718524,
       1443718769,
@@ -58,7 +62,7 @@ class SongSpec extends Specification { def is = s2"""
   }
 
   def parseNoLabel = {
-    Song.parse(Data.FIP_player_current_no_label) === Some(Song(
+    Song.parse(Data.current_no_label).asOpt === Some(Song(
       "6bf6b0d5f569da2d460de4e49cc311e0",
       1443718524,
       1443718769,
@@ -73,5 +77,12 @@ class SongSpec extends Specification { def is = s2"""
       ),
       "https://itunes.apple.com/fr/album/je-parle-en-fou/id1038007979?i=1038008110&uo=4"
     ))
+  }
+
+  def parseNoSong = {
+    Song.parse(Data.current_no_song) match {
+      case JsError(Seq((path, _))) => path.toJsonString === "obj.current.song"
+      case result => ko(result.toString)
+    }
   }
 }
