@@ -7,13 +7,11 @@ import play.api.data.validation._
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import akka.stream.ActorMaterializer
-import akka.stream.actor.ActorPublisher
-import akka.stream.scaladsl._
 
 case class FipResponse(current: FipResponseCurrent)
 case class FipResponseCurrent(song: SongInput)
@@ -89,49 +87,20 @@ object Song {
 
 object SongFetcher {
   import Play.current
-
-  case object CurrentSongRequest
-  case object SongFetchRequest
-
-  val url = "http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json"
+  import Fetcher._
 
   implicit val system = ActorSystem("fip-actor-system")
   implicit val timeout = Timeout(5.seconds)
 
-  def props(url: String)(implicit app: Application) =
-    Props(new SongFetcher(url, app))
-
-  val fetcher = system.actorOf(props(url))
-
-  def fetchCurrent: Future[JsResult[Song]] = {
-    (fetcher ? CurrentSongRequest).mapTo[JsResult[Song]]
-  }
-}
-
-class SongFetcher(url: String, app: Application) extends ActorPublisher[Option[Song]] {
-  import SongFetcher._
-  import context.dispatcher
-
-  var song: JsResult[Song] = JsError()
-
-  override def preStart = {
-    context.system.scheduler.schedule(0.seconds, 2.seconds, self, SongFetchRequest)
-  }
-
-  override def receive = {
-    case SongFetchRequest => {
-      fetchCurrentSong.map(m_song => {
-        song = m_song
-      })
-    }
-    case CurrentSongRequest => {
-      sender() ! song
-    }
-  }
-
   def fetchCurrentSong: Future[JsResult[Song]] = {
-    implicit val application = app
+    val url = "http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json"
 
     WS.url(url).get().map(_.body).map(Song.parse _)
+  }
+
+  val fetcher = system.actorOf(Fetcher.props(2.seconds, fetchCurrentSong _))
+
+  def fetchCurrent: Future[JsResult[Song]] = {
+    (fetcher ? GetCommand).mapTo[JsResult[Song]]
   }
 }
