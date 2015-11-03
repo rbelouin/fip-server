@@ -88,9 +88,11 @@ object Song {
 object SongFetcher {
   import Play.current
   import Fetcher._
+  import Song._
 
   implicit val system = ActorSystem("fip-actor-system")
   implicit val timeout = Timeout(5.seconds)
+  implicit val ew = new JsErrorWrites
 
   def fetchCurrentSong: Future[JsResult[Song]] = {
     val url = "http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json"
@@ -98,9 +100,15 @@ object SongFetcher {
     WS.url(url).get().map(_.body).map(Song.parse _)
   }
 
+  def toJson(result: JsResult[Song]) = result.fold[JsValue](Json.toJson(_), Json.toJson(_))
+
   val fetcher = system.actorOf(Fetcher.props(2.seconds, fetchCurrentSong _))
 
   def fetchCurrent: Future[JsResult[Song]] = {
     (fetcher ? GetCommand).mapTo[JsResult[Song]]
+  }
+
+  def listen(out: ActorRef) = {
+    Listener.props(fetcher, out, toJson _)
   }
 }
