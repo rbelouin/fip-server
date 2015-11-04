@@ -100,7 +100,16 @@ object SongFetcher {
     WS.url(url).get().map(_.body).map(Song.parse _)
   }
 
-  def toJson(result: JsResult[Song]) = result.fold[JsValue](Json.toJson(_), Json.toJson(_))
+  def toJson(result: JsResult[Song]) = result.fold[JsValue](
+    err => JsObject(Seq(
+      "type" -> JsString("error"),
+      "error" -> Json.toJson(err)
+    )),
+    song => JsObject(Seq(
+      "type" -> JsString("song"),
+      "song" -> Json.toJson(song)
+    ))
+  )
 
   val fetcher = system.actorOf(Fetcher.props(2.seconds, fetchCurrentSong _))
 
