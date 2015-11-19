@@ -70,7 +70,6 @@ object Spotify {
         "refresh_token" -> Seq(refresh_token)
       ))
       .map(res => {
-        println(res.json.validate[SpotifyToken])
         res.json.asOpt[SpotifyToken]
       })
   }
