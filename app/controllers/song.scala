@@ -2,8 +2,6 @@ package controllers
 
 import play.api._
 import play.api.mvc._
-import play.api.Play.current
-
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,16 +9,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 
 class SongController extends Controller {
-  implicit val ew = new JsErrorWrites
+  import Play.current
+  import Song._
+  import Error._
 
   def getCurrentSong = Action.async {
-    SongFetcher.fetchCurrent.map(m_song => {
-      m_song.fold[Result](err => {
-        InternalServerError(Json.toJson(err))
-      }, song => {
-        Ok(Json.toJson(song))
-      })
-    })
+    Fip.getCurrentSong.map(_.fold[Result](
+      error => InternalServerError(Json.toJson(error)),
+      song => Ok(Json.toJson(song))
+    ))
   }
 
   def getSongs = Action { req =>
@@ -32,7 +29,7 @@ class SongController extends Controller {
     }
   }
 
-  def getSongsWS = WebSocket.acceptWithActor[JsValue, JsValue] { req => out =>
-    SongFetcher.listen(out)
+  def getSongsWS = WebSocket.acceptWithActor[JsValue, JsValue] {
+    req => out => Fip.getSongs(out)
   }
 }

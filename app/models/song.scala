@@ -2,19 +2,6 @@ package models
 
 import play.api._
 import play.api.libs.json._
-import play.api.libs.ws._
-import play.api.data.validation._
-
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
-
-case class FipResponse(current: FipResponseCurrent)
-case class FipResponseCurrent(song: SongInput)
 
 case class SongInput(
   id: String,
@@ -42,26 +29,11 @@ case class Song(
   itunes: String
 )
 
-class JsErrorWrites extends Writes[Seq[(JsPath, Seq[ValidationError])]] {
-  override def writes(errors: Seq[(JsPath, Seq[ValidationError])]): JsValue = {
-   JsArray(errors.map {
-      case (path, errors) => {
-        JsObject(Seq(
-          "path" -> JsString(path.toJsonString),
-          "errors" -> JsArray(errors.map(err => JsString(err.message)))
-        ))
-      }
-    })
-  }
-}
-
 object Song {
-  import Play.current
+  import Error._
 
-  implicit val sif = Json.format[SongInput]
-  implicit val sf = Json.format[Song]
-  implicit val frcf = Json.format[FipResponseCurrent]
-  implicit val frf = Json.format[FipResponse]
+  implicit val songInputFormat = Json.format[SongInput]
+  implicit val songFormat = Json.format[Song]
 
   def fromInput(input: SongInput): Song = {
     Song(
@@ -78,46 +50,8 @@ object Song {
     )
   }
 
-  def parse(json: String): JsResult[Song] = {
-    val result = Json.parse(json).validate[FipResponse]
-
-    result.map(_.current.song).map(fromInput _)
-  }
-}
-
-object SongFetcher {
-  import Play.current
-  import Fetcher._
-  import Song._
-
-  implicit val system = ActorSystem("fip-actor-system")
-  implicit val timeout = Timeout(5.seconds)
-  implicit val ew = new JsErrorWrites
-
-  def fetchCurrentSong: Future[JsResult[Song]] = {
-    val url = "http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json"
-
-    WS.url(url).get().map(_.body).map(Song.parse _)
-  }
-
-  def toJson(result: JsResult[Song]) = result.fold[JsValue](
-    err => JsObject(Seq(
-      "type" -> JsString("error"),
-      "error" -> Json.toJson(err)
-    )),
-    song => JsObject(Seq(
-      "type" -> JsString("song"),
-      "song" -> Json.toJson(song)
-    ))
-  )
-
-  val fetcher = system.actorOf(Fetcher.props(2.seconds, fetchCurrentSong _))
-
-  def fetchCurrent: Future[JsResult[Song]] = {
-    (fetcher ? GetCommand).mapTo[JsResult[Song]]
-  }
-
-  def listen(out: ActorRef) = {
-    Listener.props(fetcher, out, toJson _)
+  def fromJson(json: JsValue): Either[InvalidSongData, Song] = {
+    val result = (json \ "current" \ "song").validate[SongInput]
+    result.fold(e => Left(InvalidSongData(e)), s => Right(fromInput(s)))
   }
 }
