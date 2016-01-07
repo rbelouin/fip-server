@@ -2,10 +2,8 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
-GET     /                           controllers.Application.index
-
 # API
+GET     /api                        controllers.Application.get
 GET     /api/login                  controllers.SpotifyController.login
 GET     /api/callback               controllers.SpotifyController.callback
 GET     /api/songs                  controllers.SongController.getSongs

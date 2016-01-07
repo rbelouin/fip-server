@@ -16,6 +16,9 @@ object Error {
   case class InvalidShowData(errors: Seq[JsonError])
     extends Error(200, "Fip does not provide valid show data", errors)
 
+  case class InvalidFipData(errors: Seq[JsonError])
+    extends Error(300, "Fip does not provide valid data", errors)
+
   implicit val jsonErrorWrites = new JsonErrorWrites
   implicit val errorWrites = new ErrorWrites
 

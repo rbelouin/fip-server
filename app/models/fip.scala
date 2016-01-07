@@ -19,23 +19,32 @@ object Fip {
   import Error._
   import Play.current
 
-  implicit val system = ActorSystem("fip-actor-system")
+  val conf = Configuration
+
+  implicit val system = ActorSystem(conf.actorSystemName)
   implicit val materializer = ActorMaterializer()
 
-  val source = FipSource.source(2.seconds, getFipData _)
-
-  def getFipData: Future[JsValue] = {
-    val url = "http://www.fipradio.fr/sites/default/files/import_si/si_titre_antenne/FIP_player_current.json"
-
+  def getSourceData(url: String): Future[JsValue] = {
     WS.url(url).get().map(_.body).map(Json.parse _)
   }
 
+  def getSourcesData: Future[JsValue] = {
+    val data: List[Future[(String, JsValue)]] = conf.sources.map {
+      case (name, url) => getSourceData(url).map(name -> _)
+    }.toList
+
+    Future.sequence(data).map(_.toSeq).map(JsObject(_))
+  }
+
+  val oldSource = FipSource.source(conf.actorTimeout, () => getSourceData(conf.oldSource.get))
+  val source = FipSource.source(conf.actorTimeout, getSourcesData _)
+
   def getCurrentSong: Future[Either[InvalidSongData, Song]] = {
-    source.map(Song.fromJson _).runWith(Sink.head)
+    oldSource.map(Song.fromJson _).runWith(Sink.head)
   }
 
   def getCurrentShow: Future[Either[InvalidShowData, Show]] = {
-    source.map(Show.fromJson _).runWith(Sink.head)
+    oldSource.map(Show.fromJson _).runWith(Sink.head)
   }
 
   def toJson[E, A](name: String, e_a: Either[E, A])(implicit ew: Writes[E], aw: Writes[A]): JsValue = {
@@ -53,7 +62,7 @@ object Fip {
 
   def getSongs(out: ActorRef) = Props(new Actor {
     override def preStart = {
-      source
+      oldSource
         .map(Song.fromJson _)
         .map(toJson("song", _))
         .runWith(Sink.actorRef(self, PoisonPill))
@@ -66,7 +75,7 @@ object Fip {
 
   def getShows(out: ActorRef) = Props(new Actor {
     override def preStart = {
-      source
+      oldSource
         .map(Show.fromJson _)
         .map(toJson("show", _))
         .runWith(Sink.actorRef(self, PoisonPill))
@@ -79,15 +88,7 @@ object Fip {
 
   def getAll(out: ActorRef) = Props(new Actor {
     override def preStart = {
-      val s_song = source
-        .map(Song.fromJson _)
-        .map(toJson("song", _))
-
-      val s_show = source
-        .map(Show.fromJson _)
-        .map(toJson("show", _))
-
-      Source.combine(s_song, s_show)(n => Merge(n))
+      source.map(FipData.rewriteJson _)
         .runWith(Sink.actorRef(self, PoisonPill))
     }
 

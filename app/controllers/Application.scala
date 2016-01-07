@@ -11,8 +11,8 @@ import models._
 class Application extends Controller {
   import Play.current
 
-  def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+  def get = Action.async {
+    Fip.getSourcesData.map(FipData.rewriteJson _).map(Ok(_))
   }
 
   def getWS = WebSocket.acceptWithActor[JsValue, JsValue] {
