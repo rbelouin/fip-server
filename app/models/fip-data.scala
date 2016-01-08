@@ -43,7 +43,10 @@ object FipSong {
     input.titreAlbum,
     input.anneeEditionMusique.map(_.toString),
     input.label,
-    input.visual.map(visual => Map("medium" -> visual)).getOrElse(Map.empty),
+    input.visual
+      .orElse(Configuration.defaultCover)
+      .map(visual => Map("medium" -> visual))
+      .getOrElse(Map.empty),
     input.path
   )
 }

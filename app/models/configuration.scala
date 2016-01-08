@@ -18,6 +18,10 @@ object Configuration {
     ms.milliseconds
   }
 
+  val defaultCover: Option[String] = {
+    conf.getString("fip.default-cover")
+  }
+
   val sources: Map[String, String] = {
     val keys = conf.getConfig("fip.sources").map(_.keys).getOrElse(Nil)
 
