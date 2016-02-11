@@ -36,8 +36,8 @@ object Fip {
     Future.sequence(data).map(_.toSeq).map(JsObject(_))
   }
 
-  val oldSource = FipSource.source(conf.actorTimeout, () => getSourceData(conf.oldSource.get))
-  val source = FipSource.source(conf.actorTimeout, getSourcesData _)
+  val oldSource = Fetcher.source(conf.actorTimeout, () => getSourceData(conf.oldSource.get))
+  val source = Fetcher.source(conf.actorTimeout, getSourcesData _)
 
   def getCurrentSong: Future[Either[InvalidSongData, Song]] = {
     oldSource.map(Song.fromJson _).runWith(Sink.head)

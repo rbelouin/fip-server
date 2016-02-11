@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.6"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-stream-experimental" % "2.0-M2",
+  "com.typesafe.akka" %% "akka-stream-experimental" % "2.0.3",
   jdbc,
   cache,
   ws,

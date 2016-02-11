@@ -12,12 +12,12 @@ import akka.stream._
 import akka.stream.scaladsl._
 import akka.stream.actor._
 
-object FipSource {
+object Fetcher {
   sealed trait Message
   case object FetchMessage
 
   def props(interval: FiniteDuration, fetch: () => Future[JsValue]) = {
-    Props(new FipSource(interval, fetch))
+    Props(new Fetcher(interval, fetch))
   }
 
   def source(interval: FiniteDuration, fetch: () => Future[JsValue])(implicit system: ActorSystem, materializer: ActorMaterializer) = {
@@ -25,10 +25,10 @@ object FipSource {
   }
 }
 
-class FipSource(interval: FiniteDuration, fetch: () => Future[JsValue])
+class Fetcher(interval: FiniteDuration, fetch: () => Future[JsValue])
   extends ActorPublisher[JsValue] {
 
-  import FipSource._
+  import Fetcher._
   import ActorPublisherMessage._
 
   var o_json: Option[JsValue] = None
