@@ -1,4 +1,4 @@
-This is your new Play application
-=================================
+Archived: fip-server
+====================
 
-This file will be packaged with your application, when using `activator dist`.
+Functionality has been moved to [fip-client](https://github.com/rbelouin/fip-client)
